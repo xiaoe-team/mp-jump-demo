@@ -20,10 +20,20 @@ def create_app(settings: Optional[Settings] = None, print_banner: bool = True) -
 
     app = FastAPI(
         title=APP_NAME,
-        description="跳转小鹅通鹅直播（直播 / 录播）的演示后端",
+        description=(
+            "跳转小鹅通鹅直播（直播 / 录播）的演示后端。\n\n"
+            "**响应约定**：统一信封 `{code, msg, data, trace_id}`，`code=0` 成功、`code=-1` 失败，"
+            "**HTTP 状态码恒为 200**，失败原因看 `msg`；`trace_id` 同时出现在响应头 `X-Trace-ID`。\n\n"
+            "**请求约定**：不使用任何自定义请求头，业务参数（`wx_app_id` / `code` / `token` / "
+            "`redirect_uri` / `app_env_type`）一律走请求体。"
+        ),
         version="1.0.0",
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
+        openapi_tags=[
+            {"name": "登录与登录态", "description": "登录、登录态校验、用户资料、手机号绑定、内嵌 H5 交接"},
+            {"name": "运维", "description": "健康检查与配置自检"},
+        ],
     )
 
     # 注意顺序：后添加的在更外层。CORS 最外层，其次是 trace_id，最后是兜底。

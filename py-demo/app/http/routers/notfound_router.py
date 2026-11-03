@@ -5,7 +5,8 @@ from fastapi import APIRouter, Request
 
 from app.http.response import fail
 
-router = APIRouter()
+# 兜底路由不写进接口文档（否则 /api/{rest} 这类路径会出现在 Swagger 里）
+router = APIRouter(include_in_schema=False)
 
 
 @router.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])

@@ -424,9 +424,13 @@ Python 端把用到的上游接口收成了常量 + 清单，改调用就必须�
 | POST | `/api/login` | `{ wx_app_id, code }` → `{ koToken, userId, expiresIn }`，上游报错原样透出 |
 | POST | `/api/session/check` | `{ token }` → `{ valid, userId, msg }` |
 | POST | `/api/profile` | `{ token }` → `{ userId, isBindPhone, maskedPhone }` |
-| POST | `/api/login-url` | `{ wx_app_id, code, redirect_uri }` → `{ loginUrl }`（内嵌 H5 登录态中转，代理 `user.login_url/2.0.0`） |
+| POST | `/api/check-bind-phone` | `{ token }` → `{ isBindPhone, maskedPhone }` |
+| POST | `/api/bind-or-merge-phone` | `{ token, code }` → 绑定；冲突时返回 `needMergeConfirm` + `bindToken`，二阶段传 `bindToken + confirm_merge` |
+| POST | `/api/login-url` | `{ wx_app_id, code, redirect_uri }` → `{ loginUrl, userId }`（内嵌 H5 登录态中转：小鹅云 `xe.login.url`，`login_type=4`） |
 
-`/api/docs` 是 FastAPI 自带接口文档。**后端只提供 API，不托管任何静态产物**：未知路径（含 `/`、`/index.html`）统一返回 JSON 信封 `没有这个路径：...`。
+**接口文档**：`/api/docs`（Swagger UI）、`/api/openapi.json`。每个接口都声明了响应契约——统一信封 `Envelope[各接口 Data]`（`code/msg/data/trace_id`）、中文摘要、分组标签和 data 示例；兜底 404 路由用 `include_in_schema=False` 排除在文档外。模型在 `py-demo/app/http/schemas.py`，只用于生成契约、不参与运行时校验（路由仍返回 JSONResponse）。
+
+**后端只提供 API，不托管任何静态产物**：未知路径（含 `/`、`/index.html`）统一返回 JSON 信封 `没有这个路径：...`。
 
 ## 十一、跳转鹅直播的参数
 

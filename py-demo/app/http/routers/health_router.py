@@ -7,11 +7,12 @@ from fastapi import APIRouter, Request
 
 from app.config import Settings
 from app.http.response import ok
+from app.http.schemas import HealthResponse
 from app.providers import settings
 from app.services.client_service import wechat_client, xiaoe_client
 from app.services.login_service import LoginService
 
-router = APIRouter()
+router = APIRouter(tags=["运维"])
 
 
 def _upstreams(config: Settings) -> Dict[str, object]:
@@ -32,7 +33,13 @@ def _upstreams(config: Settings) -> Dict[str, object]:
     }
 
 
-@router.api_route("/health", methods=["GET", "POST"])
+@router.api_route(
+    "/health",
+    methods=["GET", "POST"],
+    summary="健康检查",
+    description="回显环境、配置文件来源、凭证是否配齐（只给布尔），以及当前生效的上游接口清单。",
+    responses={200: {"model": HealthResponse}},
+)
 def health(request: Request):
     config = settings()
     info = {

@@ -641,5 +641,56 @@ class HealthUpstreamsTest(ApiTestBase):
         self.assertTrue([u for u in urls if "/overridden/token" in u], "登录没走覆盖后的 /overridden/token")
 
 
+class OpenApiContractTest(ApiTestBase):
+    """接口文档（/api/docs 背后的 openapi.json）要能当契约用。"""
+
+    ENDPOINTS = {
+        "/api/login",
+        "/api/session/check",
+        "/api/check-bind-phone",
+        "/api/bind-or-merge-phone",
+        "/api/login-url",
+        "/api/profile",
+    }
+
+    def spec(self):
+        response = self.client.get("/api/openapi.json")
+        self.assertEqual(response.status_code, 200)
+        return response.json()
+
+    def test_every_api_documents_envelope_schema(self):
+        spec = self.spec()
+        for path in self.ENDPOINTS:
+            op = spec["paths"][path]["post"]
+            schema = op["responses"]["200"]["content"]["application/json"]["schema"]
+            self.assertIn("$ref", schema, path + " 的 200 响应缺 schema")
+            self.assertTrue(schema["$ref"].startswith("#/components/schemas/Envelope_"), path)
+
+    def test_health_documents_envelope_schema(self):
+        spec = self.spec()
+        for op in spec["paths"]["/health"].values():
+            schema = op["responses"]["200"]["content"]["application/json"]["schema"]
+            self.assertTrue(schema.get("$ref", "").startswith("#/components/schemas/Envelope_HealthData_"))
+
+    def test_data_models_and_examples_exist(self):
+        spec = self.spec()
+        schemas = spec["components"]["schemas"]
+        for name in ("LoginData", "SessionCheckData", "ProfileData", "BindPhoneData", "LoginUrlData", "HealthData"):
+            self.assertIn(name, schemas)
+        # 契约里带示例，Swagger 里能直接看到长什么样
+        self.assertIn("example", json.dumps(schemas["LoginData"]))
+
+    def test_fallback_routes_are_not_in_schema(self):
+        spec = self.spec()
+        for path in spec["paths"]:
+            self.assertNotIn("{rest}", path, "兜底 404 路由不应出现在接口文档里")
+
+    def test_tags_and_summaries(self):
+        spec = self.spec()
+        self.assertEqual({t["name"] for t in spec["tags"]}, {"登录与登录态", "运维"})
+        self.assertEqual(spec["paths"]["/api/login"]["post"]["summary"], "小程序登录")
+        self.assertEqual(spec["paths"]["/health"]["get"]["tags"], ["运维"])
+
+
 if __name__ == "__main__":
     unittest.main()
