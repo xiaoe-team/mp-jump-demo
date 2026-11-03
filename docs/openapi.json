@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "jump-xiaoe-live-demo",
-    "description": "跳转小鹅通鹅直播（直播 / 录播）的演示后端。\n\n**响应约定**：统一信封 `{code, msg, data, trace_id}`，`code=0` 成功、`code=-1` 失败，**HTTP 状态码恒为 200**，失败原因看 `msg`；`trace_id` 同时出现在响应头 `X-Trace-ID`。\n\n**请求约定**：不使用任何自定义请求头，业务参数（`wx_app_id` / `code` / `token` / `redirect_uri` / `app_env_type`）一律走请求体。",
+    "description": "跳转小鹅通鹅直播（直播 / 录播）的演示后端。\n\n**响应约定**：统一信封 `{code, msg, data, trace_id}`，`code=0` 成功、`code=-1` 失败，**HTTP 状态码恒为 200**，失败原因看 `msg`；`trace_id` 同时出现在响应头 `X-Trace-ID`。\n\n**请求约定**：不使用任何自定义请求头，业务参数（`wx_app_id` / `code` / `token` / `redirect_uri`）一律走请求体。",
     "version": "1.0.0"
   },
   "servers": [
@@ -729,11 +729,6 @@
             "type": "string",
             "title": "Code",
             "default": ""
-          },
-          "app_env_type": {
-            "type": "string",
-            "title": "App Env Type",
-            "default": ""
           }
         },
         "type": "object",
@@ -780,11 +775,6 @@
             "type": "string",
             "title": "Redirect Uri",
             "default": ""
-          },
-          "app_env_type": {
-            "type": "string",
-            "title": "App Env Type",
-            "default": ""
           }
         },
         "type": "object",
@@ -812,11 +802,6 @@
             "type": "boolean",
             "title": "Confirm Merge",
             "default": false
-          },
-          "app_env_type": {
-            "type": "string",
-            "title": "App Env Type",
-            "default": ""
           }
         },
         "type": "object",
@@ -903,11 +888,6 @@
           "token": {
             "type": "string",
             "title": "Token",
-            "default": ""
-          },
-          "app_env_type": {
-            "type": "string",
-            "title": "App Env Type",
             "default": ""
           }
         },

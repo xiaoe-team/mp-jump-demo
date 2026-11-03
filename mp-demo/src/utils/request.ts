@@ -2,7 +2,7 @@
  * 请求层：只做一件事——拼后端地址、按 {code,msg,data} 信封解包。
  *
  * 约定：**不使用任何自定义请求头**，业务参数一律走请求体
- * （wx_app_id / code / redirect_uri / token / app_env_type）。
+ * （wx_app_id / code / redirect_uri / token）。
  * 业务失败（code!==0）直接 reject，调用方按真实错误展示，不做兜底。
  */
 import { globalData, isH5 } from '@/utils/config'

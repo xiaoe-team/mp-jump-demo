@@ -330,7 +330,6 @@ pnpm --dir mp-demo run dev:h5              # H5 调试
 | `code` | `/api/login`、`/api/login-url` | `uni.login` 拿到的 js_code |
 | `redirect_uri` | `/api/login-url` | H5 登录后回跳地址 |
 | `token` | `/api/session/check`、`/api/profile` | ko_token |
-| `app_env_type` | 以上全部 | 内嵌环境标识（`mini_program_wechat_sdk`） |
 
 - 后端**不读任何自定义请求头**（只把上游透传的 `X-Trace-ID` 当作 trace 提示，响应里回写）
 - 后端 → 小鹅云的请求头只有 `Content-Type: application/json`，用户级调用再加 `Cookie: ko_token=...`，与前端无关

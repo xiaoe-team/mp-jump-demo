@@ -26,14 +26,10 @@ class LoginRequest(BaseModel):
 
     wx_app_id: str = ""
     code: str = ""
-    # 内嵌环境标识：由前端作为参数传入（不再走请求头）
-    app_env_type: str = ""
 
 
 class TokenRequest(BaseModel):
     token: str = ""
-    # 内嵌环境标识：由前端作为参数传入（不再走请求头）
-    app_env_type: str = ""
 
 
 class PhoneBindRequest(BaseModel):
@@ -41,7 +37,6 @@ class PhoneBindRequest(BaseModel):
     code: str = ""
     bind_token: str = ""
     confirm_merge: bool = False
-    app_env_type: str = ""
 
 
 class LoginUrlRequest(BaseModel):
@@ -50,7 +45,6 @@ class LoginUrlRequest(BaseModel):
     wx_app_id: str = ""
     code: str = ""
     redirect_uri: str = ""
-    app_env_type: str = ""
 
 
 @router.post(

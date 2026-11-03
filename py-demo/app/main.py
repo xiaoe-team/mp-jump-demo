@@ -29,7 +29,7 @@ def create_app(settings: Optional[Settings] = None, print_banner: bool = True) -
             "**响应约定**：统一信封 `{code, msg, data, trace_id}`，`code=0` 成功、`code=-1` 失败，"
             "**HTTP 状态码恒为 200**，失败原因看 `msg`；`trace_id` 同时出现在响应头 `X-Trace-ID`。\n\n"
             "**请求约定**：不使用任何自定义请求头，业务参数（`wx_app_id` / `code` / `token` / "
-            "`redirect_uri` / `app_env_type`）一律走请求体。"
+            "`redirect_uri`）一律走请求体。"
         ),
         version="1.0.0",
         docs_url=None,   # 用自己的中文文档页（见 app/http/docs_page.py）

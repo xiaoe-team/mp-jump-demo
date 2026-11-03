@@ -199,7 +199,7 @@ class SessionTest(ApiTestBase):
 
     def test_check_login_after_login(self):
         ko = self._login()
-        body = self.envelope(self.client.post("/api/session/check", json={"token": ko, "app_env_type": "mini_program_wechat_sdk"}))
+        body = self.envelope(self.client.post("/api/session/check", json={"token": ko}))
         self.assertEqual(body["code"], 0)
         self.assertTrue(body["data"]["valid"])
         self.assertEqual(body["data"]["userId"], "u_1")
