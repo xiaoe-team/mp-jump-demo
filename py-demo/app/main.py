@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from app.http.docs_page import render_docs_html
+from app.http.openapi30 import to_openapi_30
 
 from app.config import Settings, load_settings
 from app.http.middleware import RecoveryMiddleware, TraceIDMiddleware
@@ -49,6 +50,23 @@ def create_app(settings: Optional[Settings] = None, print_banner: bool = True) -
         allow_headers=["*"],
         expose_headers=["X-Trace-ID"],
     )
+
+    # Apifox / Postman 等工具对 3.1 支持不全，按 3.0.3 输出：
+    # 版本号只能建完再赋值，且 pydantic 仍会吐 3.1 写法，需再过一遍降级
+    app.openapi_version = "3.0.3"
+    _fastapi_openapi = app.openapi
+
+    def _openapi_30() -> dict:
+        if app.openapi_schema:
+            return app.openapi_schema
+        app.openapi_schema = to_openapi_30(_fastapi_openapi())
+        return app.openapi_schema
+
+    app.openapi = _openapi_30  # type: ignore[method-assign]
+
+    # 接口文档里的 servers：Apifox / Postman 导入时用它当基础地址
+    if config.openapi_server_url:
+        app.servers = [{"url": config.openapi_server_url, "description": "演示环境"}]
 
     app.include_router(health_router.router)
 

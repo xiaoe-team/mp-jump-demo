@@ -33,14 +33,7 @@ def _upstreams(config: Settings) -> Dict[str, object]:
     }
 
 
-@router.api_route(
-    "/health",
-    methods=["GET", "POST"],
-    summary="健康检查",
-    description="回显环境、配置文件来源、凭证是否配齐（只给布尔），以及当前生效的上游接口清单。",
-    responses={200: {"model": HealthResponse}},
-)
-def health(request: Request):
+def _health(request: Request):
     config = settings()
     info = {
         "name": "jump-xiaoe-live-demo",
@@ -54,3 +47,20 @@ def health(request: Request):
         "configFile": config.config_file,
     }
     return ok(request, info)
+
+
+_HEALTH_DOC = dict(
+    summary="健康检查",
+    description="回显环境、配置文件来源、凭证是否配齐（只给布尔），以及当前生效的上游接口清单。",
+    responses={200: {"model": HealthResponse}},
+)
+
+
+@router.get("/health", operation_id="healthGet", **_HEALTH_DOC)
+def health_get(request: Request):
+    return _health(request)
+
+
+@router.post("/health", operation_id="healthPost", **_HEALTH_DOC)
+def health_post(request: Request):
+    return _health(request)

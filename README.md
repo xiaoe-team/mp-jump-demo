@@ -432,6 +432,8 @@ Python 端把用到的上游接口收成了常量 + 清单，改调用就必须�
 
 **没有引入任何新依赖**：OpenAPI 由 FastAPI 内置生成，schema 由 pydantic 推导。`/api/docs` 是自建页面（`py-demo/app/http/docs_page.py`），在 Swagger UI 上叠了一层中文文案替换（`Try it out → 在线调试`、`Schemas → 数据模型`…）；Swagger UI 版本固定为 `5.34.1`，升级时需同步检查 `_LABEL_MAP`。页面静态资源走 jsdelivr CDN，纯内网环境渲染不出来但 `/api/openapi.json` 不受影响。
 
+**契约按 OpenAPI 3.0.3 输出**（FastAPI 默认 3.1.0，Apifox / Postman 对 3.1 支持不全）：`app.openapi_version` 改版本号后，再由 `py-demo/app/http/openapi30.py` 把 3.1 写法降级（`anyOf: [X, null]` → `nullable: true`、`const` → `enum`、`examples` → `example`）。每个接口有稳定的 `operationId`（`login` / `sessionCheck` / …），`servers` 取自环境变量 `OPENAPI_SERVER_URL`（留空则不写），导入后基础地址和接口名都不会变。已用 `openapi-spec-validator` 校验通过。
+
 **后端只提供 API，不托管任何静态产物**：未知路径（含 `/`、`/index.html`）统一返回 JSON 信封 `没有这个路径：...`。
 
 ## 十一、跳转鹅直播的参数

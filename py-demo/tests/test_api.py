@@ -109,6 +109,7 @@ def build_settings(**overrides) -> Settings:
         env_name="test",
         config_files=["(env only)"],
         request_timeout_ms=5000,
+        openapi_server_url="https://example.test",
     )
     base.update(overrides)
     return Settings(**base)
@@ -496,7 +497,8 @@ class EnvConfigTest(unittest.TestCase):
             {
                 "port", "host", "api_base_url", "store_app_id", "client_id", "client_secret",
                 "sdk_app_id", "sdk_secret", "wechat_api_base_url", "wx_app_id", "wx_app_secret",
-                "request_timeout_ms", "xiaoe_paths", "wechat_paths", "env_name", "config_files", "raw",
+                "request_timeout_ms", "xiaoe_paths", "wechat_paths", "openapi_server_url", "env_name",
+                "config_files", "raw",
             },
         )
 
@@ -664,6 +666,42 @@ class ChineseDocsPageTest(ApiTestBase):
     def test_docs_page_not_in_schema(self):
         spec = self.client.get("/api/openapi.json").json()
         self.assertNotIn("/api/docs", spec["paths"])
+
+
+class OpenApiSpecComplianceTest(ApiTestBase):
+    """按 OpenAPI 3.0 规范输出，能被 Apifox / Postman 正常导入。"""
+
+    def spec(self):
+        return self.client.get("/api/openapi.json").json()
+
+    def test_version_is_30(self):
+        # FastAPI 默认吐 3.1.0，工具支持不全，这里固定降级成 3.0.3
+        self.assertEqual(self.spec()["openapi"], "3.0.3")
+
+    def test_no_openapi_31_only_constructs(self):
+        from app.http.openapi30 import count_31_markers
+
+        self.assertEqual(count_31_markers(self.spec()), [])
+
+    def test_nullable_used_for_optional_data(self):
+        data = self.spec()["components"]["schemas"]["Envelope_LoginData_"]["properties"]["data"]
+        self.assertTrue(data.get("nullable"), "Optional 字段应转成 nullable: true")
+        self.assertIn("$ref", data)
+
+    def test_servers_declared(self):
+        servers = self.spec().get("servers") or []
+        self.assertTrue(servers, "缺 servers 时导入工具拿不到基础地址")
+        self.assertEqual(servers[0]["url"], "https://example.test")
+
+    def test_operation_ids_unique_and_stable(self):
+        ids = [
+            op["operationId"]
+            for ops in self.spec()["paths"].values()
+            for op in ops.values()
+        ]
+        self.assertEqual(len(ids), len(set(ids)), "operationId 必须唯一")
+        for expected in ("login", "sessionCheck", "checkBindPhone", "bindOrMergePhone", "loginUrl", "profile"):
+            self.assertIn(expected, ids)
 
 
 class OpenApiContractTest(ApiTestBase):

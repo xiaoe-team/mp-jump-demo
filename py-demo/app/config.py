@@ -49,6 +49,8 @@ class Settings:
     # 接口路径覆盖（键名见 XIAOE_PATH_ENV / WECHAT_PATH_ENV；空表示全部用默认路径）
     xiaoe_paths: Dict[str, str] = field(default_factory=dict)
     wechat_paths: Dict[str, str] = field(default_factory=dict)
+    # 接口文档里的 servers 地址（Apifox 等工具导入时用它当基础地址；空表示不写 servers）
+    openapi_server_url: str = ""
     env_name: str = "development"
     config_files: List[str] = field(default_factory=list)
     raw: Dict[str, str] = field(default_factory=dict)
@@ -164,6 +166,7 @@ def load_settings(env_file: Optional[str] = None, base_dir: Optional[str] = None
         request_timeout_ms=get_int("REQUEST_TIMEOUT_MS", 10000),
         xiaoe_paths=collect_paths(XIAOE_PATH_ENV),
         wechat_paths=collect_paths(WECHAT_PATH_ENV),
+        openapi_server_url=get("OPENAPI_SERVER_URL", "").rstrip("/"),
         env_name=name,
         config_files=loaded,
         raw=file_values,
