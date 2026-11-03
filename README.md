@@ -337,7 +337,7 @@ pnpm --dir mp-demo run dev:h5              # H5 调试
 - **`mp_app_id` 全工程已不再出现**：本工程直接调小鹅云，身份键用 `union_id`，小程序身份用 `wx_app_id`，
   店铺身份用 `XIAOE_APP_ID`（`WX_APP_ID` / `WX_APP_SECRET` 只在 `wechat_client.py` 内部使用）
 
-## 五点三、登录页
+## 六、登录页
 
 登录在独立页面 `mp-demo/src/pages/login/index.vue` 完成，首页只给「去登录」入口：
 
@@ -351,7 +351,7 @@ pnpm --dir mp-demo run dev:h5              # H5 调试
 | 回到首页继续 | 未登录点「跳转」时会把房间带过去（`redirect_uri=/pages/index/index?autoJump=live`），登录成功回首页后 `onShow` 自动继续进入该直播间 |
 | 失败 | 停留在登录页，展示错误（H5 会显示「uni.login not supported」）并可「重新登录」 |
 
-## 五点四、登录态存储
+## 七、登录态存储
 
 `mp-demo/src/utils/session.ts` 在登录后写入这些 uni storage 键：
 
@@ -368,7 +368,7 @@ pnpm --dir mp-demo run dev:h5              # H5 调试
 登出只清会话相关（`ko_token` / `user_id` / `ko_token_expires_at` / `LOGIN_DATA`），`APPID` 属于环境配置保留。
 读取统一走 `getSession()` / `getLoginData()` / `getWxUserProfile()`，不要直接 `uni.getStorageSync`。
 
-## 五点五、手机号绑定弹窗（前端）
+## 八、手机号绑定弹窗（前端）
 
 `mp-demo/src/components/bind-phone-popup/index.vue`（TDesign `t-popup` + 原生 `open-type="getPhoneNumber"` 按钮）：
 
@@ -388,7 +388,7 @@ pnpm --dir mp-demo run dev:h5              # H5 调试
 
 H5 里没有 `getPhoneNumber`，点授权会失败并提示，属预期；真机/开发者工具里才能走通。
 
-## 五点六、用到的上游接口（清单在代码里）
+## 九、用到的上游接口（清单在代码里）
 
 Python 端把用到的上游接口收成了常量 + 清单，改调用就必须同步这里：
 
@@ -416,7 +416,7 @@ Python 端把用到的上游接口收成了常量 + 清单，改调用就必须�
 | POST | `/cgi-bin/stable_token` | 小程序全局 `access_token`（换手机号要用） |
 | POST | `/wxa/business/getuserphonenumber` | `getPhoneNumber` 的 code → 手机号（校验水印 appid） |
 
-## 六、接口
+## 十、接口
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
@@ -428,7 +428,7 @@ Python 端把用到的上游接口收成了常量 + 清单，改调用就必须�
 
 `/api/docs` 是 FastAPI 自带接口文档。**后端只提供 API，不托管任何静态产物**：未知路径（含 `/`、`/index.html`）统一返回 JSON 信封 `没有这个路径：...`。
 
-## 七、跳转鹅直播的参数
+## 十一、跳转鹅直播的参数
 
 入口只有一个页面：`pages/webView/webView?appId=<店铺 app_id>&aliveId=<直播间 id>&ko_token=<店铺登录态>`，
 **直播 / 录播 / 回放是同一个参数 `aliveId`**，页面内部自己分流。
