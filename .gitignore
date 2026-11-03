@@ -1,0 +1,16 @@
+node_modules/
+.pnpm-store/
+dist/
+*.log
+.DS_Store
+
+# Python
+py-demo/.venv/
+__pycache__/
+*.pyc
+
+# 环境配置：仓库不含任何 env 文件（含备份/变体），按 README 的变量表本地创建
+.env
+.env.*
+*.before-paths
+!.env.example

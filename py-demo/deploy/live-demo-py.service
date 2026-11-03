@@ -1,0 +1,38 @@
+[Unit]
+Description=Jump XiaoE Live Demo API (Python / FastAPI)
+Documentation=https://talkcheap.xiaoeknow.com/DavidWu/live-sdk-mp-demo
+Wants=network-online.target
+After=network-online.target
+# 崩溃重启限流：60 秒内最多拉起 5 次，避免坏配置时无限重启刷日志
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/apps/live-sdk-mp-demo/py-demo
+# 必须在 run.py 之前载入：load_settings() 优先读进程环境变量，其次是 .env.production
+EnvironmentFile=/apps/live-sdk-mp-demo/py-demo/.env.production
+# 单进程：会话表（ko_token → user_id）与绑定意图都存在进程内存里，
+# 加 --workers 或开多实例会让登录态只落在某一个进程上，必须保持 1 个进程。
+ExecStart=/apps/live-sdk-mp-demo/py-demo/.venv/bin/python run.py --env production
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+OOMPolicy=continue
+MemoryMax=1G
+CPUQuota=200%
+StandardOutput=append:/apps/live-sdk-mp-demo/py-demo/service.log
+StandardError=append:/apps/live-sdk-mp-demo/py-demo/service.log
+UMask=0027
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/apps/live-sdk-mp-demo/py-demo
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+# jump-xiaoe-live-demo 后端依赖（py-demo）
+# 安装：python3 -m pip install -r requirements.txt
+fastapi>=0.110,<0.116
+uvicorn>=0.29,<0.35
+pydantic>=2.5,<3
+
+# 测试用（FastAPI TestClient 依赖 httpx）
+httpx>=0.27,<0.29

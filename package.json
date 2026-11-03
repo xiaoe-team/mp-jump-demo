@@ -1,0 +1,26 @@
+{
+  "name": "jump-xiaoe-live-demo",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=22.22.0 <23",
+    "pnpm": ">=10.15.0"
+  },
+  "scripts": {
+    "server": "cd py-demo && .venv/bin/python run.py",
+    "server:setup": "cd py-demo && python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt",
+    "server:test": "cd py-demo && .venv/bin/python -m unittest discover -s tests -v",
+    "front:install": "pnpm --dir mp-demo install",
+    "dev:h5": "pnpm --dir mp-demo run dev:h5",
+    "build:h5": "pnpm --dir mp-demo run build:h5",
+    "dev:mp-weixin": "pnpm --dir mp-demo run dev:mp-weixin",
+    "build:mp-weixin": "pnpm --dir mp-demo run build:mp-weixin",
+    "server:test-env": "cd py-demo && .venv/bin/python run.py --env test",
+    "server:prod-env": "cd py-demo && .venv/bin/python run.py --env production",
+    "build:h5:test": "pnpm --dir mp-demo run build:h5:test",
+    "build:mp-weixin:test": "pnpm --dir mp-demo run build:mp-weixin:test",
+    "test:front": "pnpm --dir mp-demo run test:unit"
+  },
+  "description": "跳转小鹅通鹅直播（直播 / 录播）的 uni-app + Python(FastAPI) 前后端演示"
+}

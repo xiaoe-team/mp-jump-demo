@@ -1,0 +1,33 @@
+{
+  "name": "jump-xiaoe-live-demo-front",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "engines": {
+    "node": ">=22.22.0 <23",
+    "pnpm": ">=10.15.0"
+  },
+  "scripts": {
+    "dev:h5": "uni -m development",
+    "dev:mp-weixin": "uni -p mp-weixin -m development",
+    "build:h5": "uni build -m production",
+    "build:h5:test": "uni build -m test",
+    "build:mp-weixin": "uni build -p mp-weixin -m production",
+    "build:mp-weixin:test": "uni build -p mp-weixin -m test",
+    "test:unit": "node scripts/check-live-path.mjs"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-4020320240708001",
+    "@dcloudio/uni-components": "3.0.0-4020320240708001",
+    "@dcloudio/uni-h5": "3.0.0-4020320240708001",
+    "@dcloudio/uni-mp-weixin": "3.0.0-4020320240708001",
+    "@tdesign/uniapp": "^0.10.3",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.4.8",
+    "@dcloudio/vite-plugin-uni": "3.0.0-4020320240708001",
+    "typescript": "^5.1.6",
+    "vite": "5.2.8"
+  }
+}
