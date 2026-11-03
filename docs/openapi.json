@@ -1,0 +1,962 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "jump-xiaoe-live-demo",
+    "description": "跳转小鹅通鹅直播（直播 / 录播）的演示后端。\n\n**响应约定**：统一信封 `{code, msg, data, trace_id}`，`code=0` 成功、`code=-1` 失败，**HTTP 状态码恒为 200**，失败原因看 `msg`；`trace_id` 同时出现在响应头 `X-Trace-ID`。\n\n**请求约定**：不使用任何自定义请求头，业务参数（`wx_app_id` / `code` / `token` / `redirect_uri` / `app_env_type`）一律走请求体。",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://xiaoe-demo.david-tech.cn",
+      "description": "演示环境"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "运维"
+        ],
+        "summary": "健康检查",
+        "description": "回显环境、配置文件来源、凭证是否配齐（只给布尔），以及当前生效的上游接口清单。",
+        "operationId": "healthGet",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_HealthData_"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "运维"
+        ],
+        "summary": "健康检查",
+        "description": "回显环境、配置文件来源、凭证是否配齐（只给布尔），以及当前生效的上游接口清单。",
+        "operationId": "healthPost",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_HealthData_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "tags": [
+          "登录与登录态"
+        ],
+        "summary": "小程序登录",
+        "description": "微信 code → union_id → 小鹅云注册（幂等）→ SDK 登录，返回 ko_token。\n\n上游报错原样透出（如 40029 invalid code、40125 invalid appsecret）。",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "登录结果（code=-1 表示失败）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_LoginData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/session/check": {
+      "post": {
+        "tags": [
+          "登录与登录态"
+        ],
+        "summary": "校验登录态",
+        "description": "查后端进程内会话表（ko_token → user_id）。后端重启后会话即清空。",
+        "operationId": "sessionCheck",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_SessionCheckData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/check-bind-phone": {
+      "post": {
+        "tags": [
+          "登录与登录态"
+        ],
+        "summary": "查询手机号绑定状态",
+        "description": "只有 phone_resource 为 phone 才算真正绑定（信息采集来的不算）。",
+        "operationId": "checkBindPhone",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_BindPhoneCheckData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bind-or-merge-phone": {
+      "post": {
+        "tags": [
+          "登录与登录态"
+        ],
+        "summary": "绑定 / 合并手机号",
+        "description": "两阶段：\n\n1. 只传 code → 换手机号，若该号属于其他账号则返回 needMergeConfirm + bindToken；\n2. 传 bindToken + confirm_merge=true → 执行绑定/合并。",
+        "operationId": "bindOrMergePhone",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhoneBindRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_BindPhoneData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/login-url": {
+      "post": {
+        "tags": [
+          "登录与登录态"
+        ],
+        "summary": "换取内嵌 H5 登录地址",
+        "description": "登录取 user_id 后调小鹅云 xe.login.url（login_type=4）换一次性地址，落地点会种下 H5 的登录 cookie。redirect_uri 上的 app_env_type / app_id 会先被剥掉（平台会自己补）。",
+        "operationId": "loginUrl",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_LoginUrlData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "post": {
+        "tags": [
+          "登录与登录态"
+        ],
+        "summary": "查询用户资料",
+        "description": "按会话表里的 user_id 调 xe.user.info.get；手机号已脱敏。",
+        "operationId": "profile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope_ProfileData_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BindPhoneCheckData": {
+        "properties": {
+          "isBindPhone": {
+            "type": "boolean",
+            "title": "Isbindphone",
+            "description": "是否已绑定手机号"
+          },
+          "maskedPhone": {
+            "type": "string",
+            "title": "Maskedphone",
+            "description": "脱敏手机号（未绑定为空）",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "isBindPhone"
+        ],
+        "title": "BindPhoneCheckData",
+        "example": {
+          "isBindPhone": false,
+          "maskedPhone": ""
+        }
+      },
+      "BindPhoneData": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "是否已直接完成绑定"
+          },
+          "needMergeConfirm": {
+            "type": "boolean",
+            "title": "Needmergeconfirm",
+            "description": "手机号属于其它账号，需要二次确认合并"
+          },
+          "maskedPhone": {
+            "type": "string",
+            "title": "Maskedphone",
+            "description": "脱敏手机号",
+            "default": ""
+          },
+          "bindToken": {
+            "type": "string",
+            "title": "Bindtoken",
+            "description": "需要合并时的一次性凭证（10 分钟有效）",
+            "nullable": true
+          },
+          "expiresIn": {
+            "type": "integer",
+            "title": "Expiresin",
+            "description": "bindToken 有效期（秒）",
+            "nullable": true
+          },
+          "conflictUserId": {
+            "type": "string",
+            "title": "Conflictuserid",
+            "description": "手机号已归属的用户 ID",
+            "nullable": true
+          },
+          "merged": {
+            "type": "boolean",
+            "title": "Merged",
+            "description": "本次是否为合并操作",
+            "nullable": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "needMergeConfirm"
+        ],
+        "title": "BindPhoneData",
+        "example": {
+          "bindToken": "bt_xxx",
+          "conflictUserId": "u_other",
+          "expiresIn": 600,
+          "maskedPhone": "138****1234",
+          "needMergeConfirm": true,
+          "success": false
+        }
+      },
+      "Envelope_BindPhoneCheckData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "0 成功；-1 失败（HTTP 恒为 200，失败原因看 msg）",
+            "default": 0
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg",
+            "description": "成功为 ok，失败时为可读原因",
+            "default": "ok"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BindPhoneCheckData",
+            "description": "业务数据；失败时为 null",
+            "nullable": true
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id",
+            "description": "请求追踪 ID，响应头 X-Trace-ID 同值"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_id"
+        ],
+        "title": "Envelope[BindPhoneCheckData]"
+      },
+      "Envelope_BindPhoneData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "0 成功；-1 失败（HTTP 恒为 200，失败原因看 msg）",
+            "default": 0
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg",
+            "description": "成功为 ok，失败时为可读原因",
+            "default": "ok"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BindPhoneData",
+            "description": "业务数据；失败时为 null",
+            "nullable": true
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id",
+            "description": "请求追踪 ID，响应头 X-Trace-ID 同值"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_id"
+        ],
+        "title": "Envelope[BindPhoneData]"
+      },
+      "Envelope_HealthData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "0 成功；-1 失败（HTTP 恒为 200，失败原因看 msg）",
+            "default": 0
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg",
+            "description": "成功为 ok，失败时为可读原因",
+            "default": "ok"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HealthData",
+            "description": "业务数据；失败时为 null",
+            "nullable": true
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id",
+            "description": "请求追踪 ID，响应头 X-Trace-ID 同值"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_id"
+        ],
+        "title": "Envelope[HealthData]"
+      },
+      "Envelope_LoginData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "0 成功；-1 失败（HTTP 恒为 200，失败原因看 msg）",
+            "default": 0
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg",
+            "description": "成功为 ok，失败时为可读原因",
+            "default": "ok"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginData",
+            "description": "业务数据；失败时为 null",
+            "nullable": true
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id",
+            "description": "请求追踪 ID，响应头 X-Trace-ID 同值"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_id"
+        ],
+        "title": "Envelope[LoginData]"
+      },
+      "Envelope_LoginUrlData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "0 成功；-1 失败（HTTP 恒为 200，失败原因看 msg）",
+            "default": 0
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg",
+            "description": "成功为 ok，失败时为可读原因",
+            "default": "ok"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginUrlData",
+            "description": "业务数据；失败时为 null",
+            "nullable": true
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id",
+            "description": "请求追踪 ID，响应头 X-Trace-ID 同值"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_id"
+        ],
+        "title": "Envelope[LoginUrlData]"
+      },
+      "Envelope_ProfileData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "0 成功；-1 失败（HTTP 恒为 200，失败原因看 msg）",
+            "default": 0
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg",
+            "description": "成功为 ok，失败时为可读原因",
+            "default": "ok"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProfileData",
+            "description": "业务数据；失败时为 null",
+            "nullable": true
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id",
+            "description": "请求追踪 ID，响应头 X-Trace-ID 同值"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_id"
+        ],
+        "title": "Envelope[ProfileData]"
+      },
+      "Envelope_SessionCheckData_": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "0 成功；-1 失败（HTTP 恒为 200，失败原因看 msg）",
+            "default": 0
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg",
+            "description": "成功为 ok，失败时为可读原因",
+            "default": "ok"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SessionCheckData",
+            "description": "业务数据；失败时为 null",
+            "nullable": true
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id",
+            "description": "请求追踪 ID，响应头 X-Trace-ID 同值"
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_id"
+        ],
+        "title": "Envelope[SessionCheckData]"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthData": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "服务名"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "实现分支标识，当前固定 py-demo"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode",
+            "description": "是否真实调用上游，当前固定 real"
+          },
+          "apiBaseUrl": {
+            "type": "string",
+            "title": "Apibaseurl",
+            "description": "小鹅云开放平台地址"
+          },
+          "wechatApiBaseUrl": {
+            "type": "string",
+            "title": "Wechatapibaseurl",
+            "description": "微信接口地址"
+          },
+          "credentials": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Credentials",
+            "description": "各凭证是否配齐（只回显布尔）"
+          },
+          "upstreams": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Upstreams",
+            "description": "当前生效的上游接口路径与被覆盖项"
+          },
+          "env": {
+            "type": "string",
+            "title": "Env",
+            "description": "环境名（development / test / production）"
+          },
+          "configFile": {
+            "type": "string",
+            "title": "Configfile",
+            "description": "实际读取的配置文件"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "model",
+          "mode",
+          "apiBaseUrl",
+          "wechatApiBaseUrl",
+          "credentials",
+          "upstreams",
+          "env",
+          "configFile"
+        ],
+        "title": "HealthData"
+      },
+      "LoginData": {
+        "properties": {
+          "koToken": {
+            "type": "string",
+            "title": "Kotoken",
+            "description": "店铺级登录态 ko_token，跳转时按需携带"
+          },
+          "userId": {
+            "type": "string",
+            "title": "Userid",
+            "description": "小鹅通用户 ID"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "title": "Expiresin",
+            "description": "ko_token 有效期（秒）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "koToken",
+          "userId",
+          "expiresIn"
+        ],
+        "title": "LoginData",
+        "example": {
+          "expiresIn": 7200,
+          "koToken": "ko_xxx",
+          "userId": "u_xxx"
+        }
+      },
+      "LoginRequest": {
+        "properties": {
+          "wx_app_id": {
+            "type": "string",
+            "title": "Wx App Id",
+            "default": ""
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "default": ""
+          },
+          "app_env_type": {
+            "type": "string",
+            "title": "App Env Type",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "LoginRequest",
+        "description": "登录入参：小程序 appid 统一叫 wx_app_id，放请求体，不用请求头。"
+      },
+      "LoginUrlData": {
+        "properties": {
+          "loginUrl": {
+            "type": "string",
+            "title": "Loginurl",
+            "description": "内嵌 H5 一次性登录地址（有效期 1 分钟，state 一次性）"
+          },
+          "userId": {
+            "type": "string",
+            "title": "Userid",
+            "description": "登录后的小鹅通用户 ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loginUrl",
+          "userId"
+        ],
+        "title": "LoginUrlData",
+        "example": {
+          "loginUrl": "https://xiaoe.example.com/p/course/ecourse/preview/course_xxx?app_env_type=mini_program_wechat_sdk&app_id=app_xxx&state=xxx",
+          "userId": "u_xxx"
+        }
+      },
+      "LoginUrlRequest": {
+        "properties": {
+          "wx_app_id": {
+            "type": "string",
+            "title": "Wx App Id",
+            "default": ""
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "default": ""
+          },
+          "redirect_uri": {
+            "type": "string",
+            "title": "Redirect Uri",
+            "default": ""
+          },
+          "app_env_type": {
+            "type": "string",
+            "title": "App Env Type",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "LoginUrlRequest",
+        "description": "内嵌 H5 登录态中转入参：小程序 appid 统一叫 wx_app_id。"
+      },
+      "PhoneBindRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "default": ""
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "default": ""
+          },
+          "bind_token": {
+            "type": "string",
+            "title": "Bind Token",
+            "default": ""
+          },
+          "confirm_merge": {
+            "type": "boolean",
+            "title": "Confirm Merge",
+            "default": false
+          },
+          "app_env_type": {
+            "type": "string",
+            "title": "App Env Type",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "PhoneBindRequest"
+      },
+      "ProfileData": {
+        "properties": {
+          "userId": {
+            "type": "string",
+            "title": "Userid",
+            "description": "用户 ID"
+          },
+          "isBindPhone": {
+            "type": "boolean",
+            "title": "Isbindphone",
+            "description": "是否已绑定手机号"
+          },
+          "maskedPhone": {
+            "type": "string",
+            "title": "Maskedphone",
+            "description": "脱敏手机号",
+            "default": ""
+          },
+          "nickname": {
+            "type": "string",
+            "title": "Nickname",
+            "description": "昵称",
+            "default": ""
+          },
+          "avatar": {
+            "type": "string",
+            "title": "Avatar",
+            "description": "头像地址",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "userId",
+          "isBindPhone"
+        ],
+        "title": "ProfileData",
+        "example": {
+          "avatar": "https://...",
+          "isBindPhone": true,
+          "maskedPhone": "138****1234",
+          "nickname": "小明",
+          "userId": "u_xxx"
+        }
+      },
+      "SessionCheckData": {
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "title": "Valid",
+            "description": "登录态是否有效（查后端进程内会话表）"
+          },
+          "userId": {
+            "type": "string",
+            "title": "Userid",
+            "description": "有效时返回用户 ID",
+            "default": ""
+          },
+          "msg": {
+            "type": "string",
+            "title": "Msg",
+            "description": "无效时的原因",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "valid"
+        ],
+        "title": "SessionCheckData",
+        "example": {
+          "msg": "",
+          "userId": "u_xxx",
+          "valid": true
+        }
+      },
+      "TokenRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "default": ""
+          },
+          "app_env_type": {
+            "type": "string",
+            "title": "App Env Type",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "TokenRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "登录与登录态",
+      "description": "登录、登录态校验、用户资料、手机号绑定、内嵌 H5 交接"
+    },
+    {
+      "name": "运维",
+      "description": "健康检查与配置自检"
+    }
+  ]
+}

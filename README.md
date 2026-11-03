@@ -434,6 +434,16 @@ Python 端把用到的上游接口收成了常量 + 清单，改调用就必须�
 
 **契约按 OpenAPI 3.0.3 输出**（FastAPI 默认 3.1.0，Apifox / Postman 对 3.1 支持不全）：`app.openapi_version` 改版本号后，再由 `py-demo/app/http/openapi30.py` 把 3.1 写法降级（`anyOf: [X, null]` → `nullable: true`、`const` → `enum`、`examples` → `example`）。每个接口有稳定的 `operationId`（`login` / `sessionCheck` / …），`servers` 取自环境变量 `OPENAPI_SERVER_URL`（留空则不写），导入后基础地址和接口名都不会变。已用 `openapi-spec-validator` 校验通过。
 
+导入第三方工具的三条路（任选）：
+
+| 方式 | 地址 |
+| --- | --- |
+| URL 导入 | `https://xiaoe-demo.david-tech.cn/api/openapi.json` |
+| 文件导入 | 仓库里的 `docs/openapi.json`（用 `python3 py-demo/export_openapi.py` 重新导出） |
+| GitHub raw | `https://raw.githubusercontent.com/xiaoe-team/mp-jump-demo/release/demo/docs/openapi.json` |
+
+URL 导入时注意填**契约地址**（`/api/openapi.json`），不是文档页面地址（`/api/docs`，那是 HTML）。
+
 **后端只提供 API，不托管任何静态产物**：未知路径（含 `/`、`/index.html`）统一返回 JSON 信封 `没有这个路径：...`。
 
 ## 十一、跳转鹅直播的参数
