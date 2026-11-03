@@ -428,7 +428,9 @@ Python 端把用到的上游接口收成了常量 + 清单，改调用就必须�
 | POST | `/api/bind-or-merge-phone` | `{ token, code }` → 绑定；冲突时返回 `needMergeConfirm` + `bindToken`，二阶段传 `bindToken + confirm_merge` |
 | POST | `/api/login-url` | `{ wx_app_id, code, redirect_uri }` → `{ loginUrl, userId }`（内嵌 H5 登录态中转：小鹅云 `xe.login.url`，`login_type=4`） |
 
-**接口文档**：`/api/docs`（Swagger UI）、`/api/openapi.json`。每个接口都声明了响应契约——统一信封 `Envelope[各接口 Data]`（`code/msg/data/trace_id`）、中文摘要、分组标签和 data 示例；兜底 404 路由用 `include_in_schema=False` 排除在文档外。模型在 `py-demo/app/http/schemas.py`，只用于生成契约、不参与运行时校验（路由仍返回 JSONResponse）。
+**接口文档**：`/api/docs`（中文 Swagger 页，可在线调试）、`/api/openapi.json`（标准契约）。每个接口都声明了响应契约——统一信封 `Envelope[各接口 Data]`（`code/msg/data/trace_id`）、中文摘要、分组标签和 data 示例；兜底 404 路由用 `include_in_schema=False` 排除在文档外。契约模型在 `py-demo/app/http/schemas.py`，只用于生成文档、不参与运行时校验（路由仍返回 JSONResponse）。
+
+**没有引入任何新依赖**：OpenAPI 由 FastAPI 内置生成，schema 由 pydantic 推导。`/api/docs` 是自建页面（`py-demo/app/http/docs_page.py`），在 Swagger UI 上叠了一层中文文案替换（`Try it out → 在线调试`、`Schemas → 数据模型`…）；Swagger UI 版本固定为 `5.34.1`，升级时需同步检查 `_LABEL_MAP`。页面静态资源走 jsdelivr CDN，纯内网环境渲染不出来但 `/api/openapi.json` 不受影响。
 
 **后端只提供 API，不托管任何静态产物**：未知路径（含 `/`、`/index.html`）统一返回 JSON 信封 `没有这个路径：...`。
 

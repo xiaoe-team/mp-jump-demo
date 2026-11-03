@@ -5,6 +5,9 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+
+from app.http.docs_page import render_docs_html
 
 from app.config import Settings, load_settings
 from app.http.middleware import RecoveryMiddleware, TraceIDMiddleware
@@ -28,7 +31,7 @@ def create_app(settings: Optional[Settings] = None, print_banner: bool = True) -
             "`redirect_uri` / `app_env_type`）一律走请求体。"
         ),
         version="1.0.0",
-        docs_url="/api/docs",
+        docs_url=None,   # 用自己的中文文档页（见 app/http/docs_page.py）
         openapi_url="/api/openapi.json",
         openapi_tags=[
             {"name": "登录与登录态", "description": "登录、登录态校验、用户资料、手机号绑定、内嵌 H5 交接"},
@@ -51,6 +54,13 @@ def create_app(settings: Optional[Settings] = None, print_banner: bool = True) -
 
     api_prefix = "/api"
     app.include_router(login_router.router, prefix=api_prefix)
+
+    # 中文版接口文档页（Swagger UI + 文案本地化），数据来自 /api/openapi.json
+    @app.get("/api/docs", include_in_schema=False, summary="接口文档")
+    def api_docs() -> HTMLResponse:
+        return HTMLResponse(
+            render_docs_html(title=app.title, openapi_url=app.openapi_url or "/api/openapi.json")
+        )
 
     # 未匹配的路径统一返回 JSON 信封（后端只提供 API，不托管任何静态产物）
     app.include_router(notfound_router.router)

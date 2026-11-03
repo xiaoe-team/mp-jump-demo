@@ -641,6 +641,31 @@ class HealthUpstreamsTest(ApiTestBase):
         self.assertTrue([u for u in urls if "/overridden/token" in u], "登录没走覆盖后的 /overridden/token")
 
 
+class ChineseDocsPageTest(ApiTestBase):
+    """自定义的中文接口文档页（/api/docs）。"""
+
+    def test_docs_page_renders_with_chinese_labels(self):
+        response = self.client.get("/api/docs")
+        self.assertEqual(response.status_code, 200)
+        html = response.text
+        self.assertIn("接口文档", html)
+        # 文案映射表随页面下发（在线调试/发送请求/数据模型…）
+        for label in ("在线调试", "发送请求", "数据模型", "响应体"):
+            self.assertIn(label, html)
+        # 数据仍然来自标准 openapi.json
+        self.assertIn("/api/openapi.json", html)
+
+    def test_swagger_ui_version_is_pinned(self):
+        from app.http.docs_page import SWAGGER_UI_VERSION
+
+        html = self.client.get("/api/docs").text
+        self.assertIn("swagger-ui-dist@" + SWAGGER_UI_VERSION, html)
+
+    def test_docs_page_not_in_schema(self):
+        spec = self.client.get("/api/openapi.json").json()
+        self.assertNotIn("/api/docs", spec["paths"])
+
+
 class OpenApiContractTest(ApiTestBase):
     """接口文档（/api/docs 背后的 openapi.json）要能当契约用。"""
 
